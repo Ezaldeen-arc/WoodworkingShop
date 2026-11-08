@@ -5,6 +5,7 @@
   "side": "Side",
   "top": "Top",
   "back": "Back",
+  "exportElevationDxf": "Export carcass elevations (DXF)",
   "shopDrawing": "Shop drawing",
   "explodedDrawing": "Exploded assembly",
   "drawingFront": "Front elevation",

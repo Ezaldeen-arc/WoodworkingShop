@@ -5,6 +5,7 @@
   "side": "Côté",
   "top": "Dessus",
   "back": "Arrière",
+  "exportElevationDxf": "Exporter les élévations du caisson (DXF)",
   "shopDrawing": "Plan de fabrication",
   "explodedDrawing": "Vue éclatée",
   "drawingFront": "Élévation de face",

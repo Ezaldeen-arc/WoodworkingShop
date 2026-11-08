@@ -5,6 +5,7 @@
   "side": "Seite",
   "top": "Oben",
   "back": "Rückseite",
+  "exportElevationDxf": "Korpusansichten exportieren (DXF)",
   "shopDrawing": "Fertigungszeichnung",
   "explodedDrawing": "Explosionszeichnung",
   "drawingFront": "Vorderansicht",

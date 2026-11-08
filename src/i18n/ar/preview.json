@@ -5,6 +5,7 @@
   "side": "الجانب",
   "top": "الأعلى",
   "back": "الخلف",
+  "exportElevationDxf": "تصدير مساقط هيكل الخزانة (DXF)",
   "shopDrawing": "رسم تنفيذي",
   "explodedDrawing": "منظور تجميعي مفكك",
   "drawingFront": "المسقط الأمامي",

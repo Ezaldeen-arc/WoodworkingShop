@@ -5,6 +5,7 @@
   "side": "Lateral",
   "top": "Superior",
   "back": "Trasero",
+  "exportElevationDxf": "Exportar alzados del cuerpo (DXF)",
   "shopDrawing": "Plano de fabricación",
   "explodedDrawing": "Vista explosionada",
   "drawingFront": "Alzado frontal",

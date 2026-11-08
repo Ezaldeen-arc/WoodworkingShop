@@ -1,3 +1,5 @@
+import { cabinetElevationDxf } from '../../utils/cabinet-elevation-dxf';
+import { triggerDownload } from '../../utils/download';
 import { useState, useCallback, useRef, useMemo, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCabinetStore } from '../../store/cabinet-store';
@@ -175,6 +177,21 @@ export const CabinetPreview = memo(function CabinetPreview() {
         >
           <IconDownload size={11} /> PNG
         </button>
+        {activeView === 'drawing' && config.furnitureType !== 'desk' && config.furnitureType !== 'panel' && (
+          <button
+            type="button"
+            className="rounded border px-3 py-1"
+            onClick={() =>
+              triggerDownload(
+                cabinetElevationDxf(config, customMaterials),
+                'application/dxf',
+                'cabinet-elevations-mm.dxf',
+              )
+            }
+          >
+            {t('preview.exportElevationDxf')}
+          </button>
+        )}
         {zoomScale !== 1 && (
           <button
             onClick={() => setZoomScale(1)}

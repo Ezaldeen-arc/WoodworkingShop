@@ -831,6 +831,10 @@
       "classification": "surfaced",
       "rationale": "Transitive UI reachability is evidenced by src/App.tsx."
     },
+    "src/utils/cabinet-elevation-dxf.ts": {
+      "classification": "surfaced",
+      "rationale": "CabinetPreview exports front and side carcass elevations from the drawing tab."
+    },
     "src/utils/dxf-builders.ts": {
       "classification": "surfaced",
       "rationale": "Transitive UI reachability is evidenced by src/App.tsx."
