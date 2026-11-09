@@ -1,4 +1,4 @@
-import { computeEqualShelfPositions } from '../engine/geometry/dimensions';
+import { compartmentAxes, computeEqualShelfPositions } from '../engine/geometry/dimensions';
 import { generateParts } from '../engine/geometry/parts';
 import template from './cabinet-elevation-template.dxf?raw';
 import type { CabinetConfig, Material } from '../engine/core/types';
@@ -28,7 +28,7 @@ export function cabinetElevationDxf(
   const { width, height, depth } = config;
   const thickness = getMaterial(config.carcassMaterial, customMaterials).thickness;
   const count = config.shelfCentreSupports ?? 0;
-  const inside = width - 2 * thickness;
+  const axes = compartmentAxes(config, thickness);
   const side = width + 240;
   let active: DrawingView = { title: 'Front and side elevations', origin: 0, width: side + depth, height, marks: [] };
   views?.push(active);
@@ -197,7 +197,7 @@ export function cabinetElevationDxf(
   let left = thickness;
   for (let i = 1; i <= count; i++) {
     // The preview spaces divider centre lines evenly across the inside width.
-    const centre = thickness + (inside * i) / (count + 1);
+    const centre = axes[i - 1];
     const right = centre - thickness / 2;
     dimension([left, height - thickness], [right, height - thickness], 65);
     left = centre + thickness / 2;
@@ -216,12 +216,16 @@ export function cabinetElevationDxf(
       config.shelfSpacing === 'custom' && config.customShelfPositions.length
         ? config.customShelfPositions
         : computeEqualShelfPositions(height - 2 * thickness, config.shelfCount);
-    const shelf = parts.find((p) => p.name.en === 'Adjustable Shelf');
+    const shelves = parts.filter((p) => p.name.en.startsWith('Adjustable Shelf'));
+    const shelf = shelves[0];
     if (shelf)
       for (const pos of positions) {
-        const left = (width - shelf.length) / 2;
-        for (const y of [thickness + pos - shelf.thickness / 2, thickness + pos + shelf.thickness / 2])
-          geometry += line('FRONT', [left, y], [left + shelf.length, y]);
+        for (const [i, panel] of shelves.entries()) {
+          const left =
+            shelves.length === 1 ? (width - panel.length) / 2 : (i === 0 ? thickness : axes[i - 1] + thickness / 2) + 1;
+          for (const y of [thickness + pos - shelf.thickness / 2, thickness + pos + shelf.thickness / 2])
+            geometry += line('FRONT', [left, y], [left + panel.length, y]);
+        }
       }
     const x = nextView('Vertical section through shelf bay', depth, height);
     geometry += outline('SIDE', x, depth, height);
@@ -250,7 +254,7 @@ export function cabinetElevationDxf(
       for (const offset of [thickness, width - thickness])
         geometry += line('FRONT', [hx + offset, 0], [hx + offset, depth]);
       for (let n = 1; n <= count; n++) {
-        const cx = hx + thickness + (inside * n) / (count + 1);
+        const cx = hx + axes[n - 1];
         geometry += outline('FRONT', cx - support.thickness / 2, support.thickness, support.width);
       }
       dimension([hx, 0], [hx + thickness, 0], -60);

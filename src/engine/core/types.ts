@@ -177,6 +177,7 @@ export interface CabinetConfig {
    * Used by the "Add centre support" fix on shelf deflection / wide span issues.
    */
   shelfCentreSupports?: number;
+  compartmentWeights?: number[];
 
   // Material
   carcassMaterial: string; // material key

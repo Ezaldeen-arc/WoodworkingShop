@@ -1,6 +1,6 @@
 import type { CabinetConfig, Material, Part } from '../core/contracts/index';
 import { getMaterial, computePartWeightKg } from '../materials/index.ts';
-import { computeDimensions } from './dimensions';
+import { computeDimensions, compartmentWidths } from './dimensions';
 import { createJsonMemo } from '../core/contracts/index';
 
 /**
@@ -320,6 +320,19 @@ export const generateParts: (cfg: CabinetConfig, extraMaterials?: Material[]) =>
       });
     }
 
+    if (cfg.compartmentWeights && centreSupports > 0) {
+      const bays = compartmentWidths(cfg, t);
+      return parts.flatMap((p) => {
+        const adjustable = p.name.en === 'Adjustable Shelf';
+        if (!adjustable && p.name.en !== 'Fixed Shelf') return [p];
+        return bays.map((width, i) => ({
+          ...p,
+          id: p.id + '-B' + (i + 1),
+          length: Number((width - (adjustable ? 2 : 0)).toFixed(3)),
+          name: { en: p.name.en + ' / Bay ' + (i + 1), he: p.name.he + ' / ' + (i + 1) },
+        }));
+      });
+    }
     return parts;
   },
 );

@@ -1,3 +1,4 @@
+import { generateParts } from '../../src/engine/geometry/parts';
 import { describe, expect, it } from 'vitest';
 import { cabinetElevationDxf, type DrawingView } from '../../src/utils/cabinet-elevation-dxf';
 import { cfg } from '../helpers';
@@ -70,4 +71,25 @@ it.each([1800, 2100])('exports wardrobe panel details at their cut sizes for wid
   expect(size('Door')).toEqual([2394, (width - 8) / 2]);
   expect(size('Drawer 1 Front')).toEqual([180, width - 36]);
   expect(views.map((v) => v.title)).toContain('Horizontal section through dividers');
+});
+
+it('keeps a resized bay consistent in the panel schedule and the editable drawing', () => {
+  const config = cfg({
+    width: 1275,
+    height: 2100,
+    depth: 450,
+    carcassMaterial: 'melamine-18',
+    shelfCount: 3,
+    shelfCentreSupports: 1,
+    compartmentWeights: [831, 390],
+  });
+  const parts = generateParts(config);
+  expect(parts.filter((p) => p.name.en.startsWith('Adjustable Shelf')).map((p) => [p.qty, p.length])).toEqual([
+    [3, 829],
+    [3, 388],
+  ]);
+  const views: DrawingView[] = [];
+  cabinetElevationDxf(config, [], views);
+  expect(views[0].marks.filter((m) => m.kind === 'text').map((m) => m.value)).toContain('390');
+  expect(views.find((v) => v.title.endsWith('Adjustable Shelf / Bay 2'))?.height).toBe(388);
 });

@@ -14,6 +14,8 @@ export function IsometricView({
   materialId,
   shelfPositions,
   centreSupportCount,
+  axes,
+  splitShelves,
   hasDoors,
   doorStyle,
   doorCount,
@@ -36,6 +38,8 @@ export function IsometricView({
   materialId?: string;
   shelfPositions: number[];
   centreSupportCount: number;
+  axes?: number[];
+  splitShelves?: boolean;
   hasDoors: boolean;
   doorStyle: string;
   doorCount: number;
@@ -204,6 +208,8 @@ export function IsometricView({
         sc={sc}
         shelfPositions={shelfPositions}
         centreSupportCount={centreSupportCount}
+        axes={axes}
+        splitShelves={splitShelves}
         tex={tex}
         grainStep={grainStep}
         drawerFronts={drawerFronts}

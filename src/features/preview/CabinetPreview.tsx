@@ -1,3 +1,4 @@
+import { StudioControls } from './StudioControls';
 import { cabinetElevationDxf } from '../../utils/cabinet-elevation-dxf';
 import { triggerDownload } from '../../utils/download';
 import { useState, useCallback, useRef, useMemo, memo } from 'react';
@@ -6,7 +7,7 @@ import { useCabinetStore } from '../../store/cabinet-store';
 import { useCustomMaterialsStore } from '../../store/custom-materials-store';
 import { getMaterial } from '../../engine/materials/materials';
 import { getMaterialTextureId } from '../../engine/materials/material-textures';
-import { computeEqualShelfPositions } from '../../engine/geometry/dimensions';
+import { compartmentAxes, computeEqualShelfPositions } from '../../engine/geometry/dimensions';
 import { formatDim } from '../../utils/units';
 import { useTouchGestures } from '../../hooks/useTouchGestures';
 import { IconDownload } from '../../ui/Icons';
@@ -38,11 +39,14 @@ export const CabinetPreview = memo(function CabinetPreview() {
   const customMaterials = useCustomMaterialsStore((state) => state.materials);
   /** Format a mm value using the active unit system */
   const fd = (mm: number) => formatDim(mm, units);
-  const [activeView, setActiveView] = useState<ViewId>('front');
+  const [activeView, setActiveView] = useState<ViewId>(() =>
+    new URLSearchParams(window.location.search).get('view') === '3d' ? '3d' : 'front',
+  );
   const previewRef = useRef<HTMLDivElement>(null);
   const [showDims, setShowDims] = useState(true);
   const [tooltip, setTooltip] = useState<TooltipInfo | null>(null);
   const [paper, setPaper] = useState<'A3' | 'A2'>('A3');
+  const [scale, setScale] = useState(0);
   const [revision, setRevision] = useState('01');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'busy' | 'error'>('idle');
   const [zoomScale, setZoomScale] = useState(1);
@@ -75,10 +79,8 @@ export const CabinetPreview = memo(function CabinetPreview() {
   const D = config.depth * S;
   const T = thick * S;
   const centreSupportCount = Math.max(0, config.shelfCentreSupports ?? 0);
-  const centreSupportXs = Array.from(
-    { length: centreSupportCount },
-    (_, i) => T + ((W - 2 * T) * (i + 1)) / (centreSupportCount + 1),
-  );
+  const axes = compartmentAxes(config, thick);
+  const centreSupportXs = axes.map((x) => x * S);
   const dimPad = showDims ? 45 : 30; // extra space for dimension lines
 
   const carcassMatName = getMaterial(config.carcassMaterial, customMaterials).name[config.lang];
@@ -136,7 +138,7 @@ export const CabinetPreview = memo(function CabinetPreview() {
 
   return (
     <div className="space-y-4">
-      {/* View tab bar */}
+      <StudioControls />
       <div className="flex flex-wrap items-center gap-1">
         <div role="tablist" aria-label="Cabinet view selector" className="flex flex-wrap gap-1">
           {views.map((v) => (
@@ -195,7 +197,7 @@ export const CabinetPreview = memo(function CabinetPreview() {
             {t('preview.exportElevationDxf')}
           </button>
         )}
-        {activeView === 'drawing' && config.furnitureType === 'wardrobe' && (
+        {(config.furnitureType === 'wardrobe' || config.furnitureType === 'cabinet') && (
           <>
             <select
               aria-label="Sheet size"
@@ -204,6 +206,18 @@ export const CabinetPreview = memo(function CabinetPreview() {
             >
               <option>A3</option>
               <option>A2</option>
+            </select>
+            <select
+              aria-label="Preferred drawing scale"
+              value={scale}
+              onChange={(e) => setScale(Number(e.target.value))}
+            >
+              <option value={0}>Auto scale</option>
+              {[10, 15, 20, 25, 50].map((v) => (
+                <option key={v} value={v}>
+                  1:{v} or smaller
+                </option>
+              ))}
             </select>
             <label>
               Rev. <input className="w-12 border" value={revision} onChange={(e) => setRevision(e.target.value)} />
@@ -218,7 +232,7 @@ export const CabinetPreview = memo(function CabinetPreview() {
                 )
               }
             >
-              Shop DXF
+              Export AutoCAD DXF
             </button>
             <button
               type="button"
@@ -231,7 +245,16 @@ export const CabinetPreview = memo(function CabinetPreview() {
                   const { downloadBlob } = await import('../../platform/files/download');
                   const unit = 'C' + (activeCabinetIndex + 1) + ' ' + cabinets[activeCabinetIndex].name;
                   downloadBlob(
-                    await wardrobeReviewPdf(config, customMaterials, projectName, unit, revision, paper),
+                    await wardrobeReviewPdf(
+                      config,
+                      customMaterials,
+                      projectName,
+                      unit,
+                      revision,
+                      paper,
+                      scale,
+                      cabinets[activeCabinetIndex].notes,
+                    ),
                     'wardrobe-review.pdf',
                   );
                   setPdfStatus('idle');
@@ -240,7 +263,11 @@ export const CabinetPreview = memo(function CabinetPreview() {
                 }
               }}
             >
-              {pdfStatus === 'busy' ? 'Preparing PDF…' : pdfStatus === 'error' ? 'Retry PDF' : 'Shop PDF'}
+              {pdfStatus === 'busy'
+                ? 'Preparing PDF…'
+                : pdfStatus === 'error'
+                  ? 'Retry PDF'
+                  : 'Export Shop Drawings PDF'}
             </button>
           </>
         )}
@@ -375,6 +402,8 @@ export const CabinetPreview = memo(function CabinetPreview() {
               materialId={getMaterialTextureId(config.carcassMaterial)}
               shelfPositions={shelfPositions}
               centreSupportCount={centreSupportCount}
+              axes={axes}
+              splitShelves={Boolean(config.compartmentWeights)}
               hasDoors={config.doorStyle !== 'none'}
               doorStyle={config.doorStyle}
               doorCount={config.doorCount}

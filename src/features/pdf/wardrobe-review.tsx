@@ -12,6 +12,8 @@ export async function wardrobeReviewPdf(
   unit: string,
   revision: string,
   paper: 'A3' | 'A2',
+  preferredScale = 0,
+  notes = '',
 ) {
   const views: DrawingView[] = [];
   cabinetElevationDxf(config, materials, views);
@@ -34,6 +36,7 @@ export async function wardrobeReviewPdf(
           paddingTop: 6,
         }}
       >
+        {notes && <Text style={{ fontSize: 9, marginBottom: 3 }}>{notes}</Text>}
         <Text style={{ fontSize: 13 }}>
           {project || 'Untitled project'} / {unit} / {title}
         </Text>
@@ -50,8 +53,9 @@ export async function wardrobeReviewPdf(
         const extentW = Math.max(v.width + 300, 850),
           extentH = v.height + 330;
         const scale =
-          [5, 10, 15, 20, 25, 50, 100].find((n) => extentW / n <= innerW && extentH / n <= innerH) ??
-          Math.ceil(Math.max(extentW / innerW, extentH / innerH));
+          [5, 10, 15, 20, 25, 50, 100].find(
+            (n) => n >= preferredScale && extentW / n <= innerW && extentH / n <= innerH,
+          ) ?? Math.ceil(Math.max(extentW / innerW, extentH / innerH));
         const tx = extentW / 2 - v.width / 2,
           ty = v.height + 110;
         return (

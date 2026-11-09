@@ -38,7 +38,10 @@ export function computeDimensions(cfg: CabinetConfig, extraMaterials?: Material[
   // remaining bay is what governs deflection: effectiveSpan = shelfWidth / (n+1).
   const mat = getMaterial(cfg.carcassMaterial, extraMaterials);
   const centreSupports = Math.max(0, cfg.shelfCentreSupports ?? 0);
-  const effectiveShelfSpan = shelfWidth / (centreSupports + 1);
+  const effectiveShelfSpan =
+    cfg.compartmentWeights && centreSupports
+      ? Math.max(...compartmentWidths(cfg, t)) - 2
+      : shelfWidth / (centreSupports + 1);
   const shelfDeflections = Array.from({ length: cfg.shelfCount }, () =>
     computeShelfDeflection(effectiveShelfSpan, mat.thickness, shelfDepth, cfg.carcassMaterial),
   );
@@ -191,4 +194,25 @@ export function computeShelfDeflection(
     deflectionRating,
     maxLoadKg: asKg(maxLoadKg),
   };
+}
+
+/** Clear bay widths in mm. Legacy projects space divider axes equally. */
+export function compartmentWidths(config: CabinetConfig, t: number): number[] {
+  const count = (config.shelfCentreSupports ?? 0) + 1;
+  const inside = config.width - 2 * t;
+  const weights = config.compartmentWeights;
+  if (weights?.length === count && weights.every((v) => Number.isFinite(v) && v > 0)) {
+    const sum = weights.reduce((a, b) => a + b, 0);
+    return weights.map((w) => ((inside - (count - 1) * t) * w) / sum);
+  }
+  return Array.from({ length: count }, (_, i) => inside / count - (i > 0 ? t / 2 : 0) - (i < count - 1 ? t / 2 : 0));
+}
+export function compartmentAxes(config: CabinetConfig, t: number): number[] {
+  let x = t;
+  return compartmentWidths(config, t)
+    .slice(0, -1)
+    .map((w) => {
+      x += w + t;
+      return x - t / 2;
+    });
 }

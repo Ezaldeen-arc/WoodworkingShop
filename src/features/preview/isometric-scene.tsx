@@ -26,6 +26,8 @@ export function IsometricScene({
   sc,
   shelfPositions,
   centreSupportCount,
+  axes,
+  splitShelves,
   tex,
   grainStep,
   drawerFronts,
@@ -106,6 +108,40 @@ export function IsometricScene({
       {/* Shelves — top face + front edge + grain lines */}
       {shelfPositions.map((pos, i) => {
         const sy = T + pos * sc;
+        if (splitShelves && axes?.length) {
+          const starts = [thick, ...axes.map((x) => x + thick / 2)],
+            ends = [...axes.map((x) => x - thick / 2), w - thick];
+          return starts.map((start, bay) => {
+            const a = (start + 1) * sc,
+              b = (ends[bay] - 1) * sc,
+              front = 20 * sc,
+              base = sy - T / 2;
+            return (
+              <g key={bay}>
+                <polygon
+                  points={isoQuad([a, base + T, front], [b, base + T, front], [b, base + T, D], [a, base + T, D])}
+                  fill={topFill}
+                  stroke="#888"
+                  strokeWidth={0.3}
+                >
+                  <title>
+                    {'Shelf ' +
+                      (i + 1) +
+                      ' / Bay ' +
+                      (bay + 1) +
+                      ' / ' +
+                      Number((ends[bay] - start - 2).toFixed(3)) +
+                      ' mm'}
+                  </title>
+                </polygon>
+                <polygon
+                  points={isoQuad([a, base, front], [b, base, front], [b, base + T, front], [a, base + T, front])}
+                  fill={sideFill}
+                />
+              </g>
+            );
+          });
+        }
         const sT = T * 0.6;
         const shelfGrainStep = Math.max((W - 2 * T) / 5, 3);
         return (
@@ -153,8 +189,8 @@ export function IsometricScene({
 
       {/* Centre supports (full-height dividers that split shelf bays). */}
       {Array.from({ length: centreSupportCount }).map((_, i) => {
-        const sx = T + ((W - 2 * T) * (i + 1)) / (centreSupportCount + 1);
-        const st = Math.max(T * 0.45, 1.2 * sc);
+        const sx = axes ? axes[i] * sc : T + ((W - 2 * T) * (i + 1)) / (centreSupportCount + 1);
+        const st = splitShelves ? T : Math.max(T * 0.45, 1.2 * sc);
         return (
           <polygon
             key={`centre-support-iso-${i}`}

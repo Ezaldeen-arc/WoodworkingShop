@@ -24,6 +24,8 @@ export interface IsometricSceneProps {
   sc: number;
   shelfPositions: readonly number[];
   centreSupportCount: number;
+  axes?: number[];
+  splitShelves?: boolean;
   tex: MaterialTexture | undefined;
   grainStep: number;
   drawerFronts: readonly { y: number; fh: number }[];

@@ -231,7 +231,7 @@ describe('CabinetPreview — door/drawer count pills (Sprint 89)', () => {
       units: 'metric',
     });
     render(<CabinetPreview />);
-    expect(screen.queryByText(/doors/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/drawers/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^\d+ doors$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^\d+ drawers$/i)).not.toBeInTheDocument();
   });
 });

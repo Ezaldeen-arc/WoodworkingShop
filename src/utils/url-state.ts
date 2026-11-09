@@ -1,5 +1,5 @@
 import type { CabinetConfig, DrawerSlideType } from '../engine/core/types';
-import { DEFAULT_CONFIG, CONSTRAINTS } from '../engine/materials/materials';
+import { DEFAULT_CONFIG, HARD_LIMITS, CONSTRAINTS } from '../engine/materials/materials';
 import { getConfiguratorTemplate } from '../engine/project/templates/index';
 import { commitAppUrl, listenForTraverse } from '../platform/navigation/app-navigation';
 import { getQueryValue, parseQueryString, serializeQueryRecord, type QueryRecord } from './browser-compat';
@@ -14,6 +14,15 @@ export function configToParams(cfg: CabinetConfig): QueryRecord {
   const params: QueryRecord = {};
   const def = DEFAULT_CONFIG;
 
+  if (
+    cfg.width > CONSTRAINTS.maxWidth ||
+    cfg.height > CONSTRAINTS.maxHeight ||
+    cfg.depth > CONSTRAINTS.maxDepth ||
+    cfg.width < CONSTRAINTS.minWidth ||
+    cfg.height < CONSTRAINTS.minHeight ||
+    cfg.depth < CONSTRAINTS.minDepth
+  )
+    params.ext = '1';
   if (cfg.width !== def.width) params.w = String(cfg.width);
   if (cfg.height !== def.height) params.h = String(cfg.height);
   if (cfg.depth !== def.depth) params.d = String(cfg.depth);
@@ -23,6 +32,7 @@ export function configToParams(cfg: CabinetConfig): QueryRecord {
   if (cfg.shelfSpacing === 'custom' && cfg.customShelfPositions.length > 0) {
     params.csp = cfg.customShelfPositions.join(',');
   }
+  if (cfg.compartmentWeights?.length) params.cw = cfg.compartmentWeights.join(',');
   if ((cfg.shelfCentreSupports ?? 0) !== (def.shelfCentreSupports ?? 0))
     params.scs = String(cfg.shelfCentreSupports ?? 0);
   if (cfg.carcassMaterial !== def.carcassMaterial) params.cm = cfg.carcassMaterial;
@@ -52,12 +62,13 @@ export function configToParams(cfg: CabinetConfig): QueryRecord {
 export function paramsToConfig(params: QueryRecord): Partial<CabinetConfig> {
   const patch: Partial<CabinetConfig> = {};
 
+  const limits = params.ext === '1' ? HARD_LIMITS : CONSTRAINTS;
   const w = params.w;
-  if (w) patch.width = Math.max(CONSTRAINTS.minWidth, Math.min(CONSTRAINTS.maxWidth, Number(w)));
+  if (w) patch.width = Math.max(limits.minWidth, Math.min(limits.maxWidth, Number(w)));
   const h = params.h;
-  if (h) patch.height = Math.max(CONSTRAINTS.minHeight, Math.min(CONSTRAINTS.maxHeight, Number(h)));
+  if (h) patch.height = Math.max(limits.minHeight, Math.min(limits.maxHeight, Number(h)));
   const d = params.d;
-  if (d) patch.depth = Math.max(CONSTRAINTS.minDepth, Math.min(CONSTRAINTS.maxDepth, Number(d)));
+  if (d) patch.depth = Math.max(limits.minDepth, Math.min(limits.maxDepth, Number(d)));
   const ft = params.ft;
   if (ft === 'cabinet' || ft === 'bookshelf' || ft === 'desk' || ft === 'wardrobe' || ft === 'panel')
     patch.furnitureType = ft;
@@ -71,6 +82,9 @@ export function paramsToConfig(params: QueryRecord): Partial<CabinetConfig> {
       .split(',')
       .map(Number)
       .filter((n) => !isNaN(n));
+  const rawWeights = params.cw?.split(',').map(Number);
+  if (rawWeights && rawWeights.length <= 6 && rawWeights.every((n) => Number.isFinite(n) && n > 0))
+    patch.compartmentWeights = rawWeights;
   const scs = params.scs;
   if (scs !== undefined) patch.shelfCentreSupports = Math.max(0, Math.min(5, Number(scs) || 0));
   const cm = params.cm;
