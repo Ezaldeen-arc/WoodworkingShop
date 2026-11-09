@@ -32,9 +32,12 @@ describe('cabinet elevation DXF', () => {
     expect(
       dims.map((d) => Math.hypot(Number(d.get(14)) - Number(d.get(13)), Number(d.get(24)) - Number(d.get(23)))),
     ).toEqual([...bays, width, 600, 2400, 2364]);
+    expect(file).toContain('9\r\n$INSUNITS\r\n70\r\n4\r\n');
+    expect(file.match(/\r\nSOLID\r\n/g)).toHaveLength(2 * dims.length);
     for (const d of dims) {
       expect(d.get(8)).toBe('DIMENSIONS');
-      expect(file).toContain('BLOCK\r\n8\r\n0\r\n2\r\n' + d.get(2) + '\r\n');
+      expect(d.get(3)).toBe('CABINET_MM');
+      expect(file).toContain('AcDbBlockBegin\r\n2\r\n' + d.get(2) + '\r\n');
     }
   });
 });
