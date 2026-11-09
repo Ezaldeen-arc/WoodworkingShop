@@ -42,6 +42,9 @@ export const CabinetPreview = memo(function CabinetPreview() {
   const previewRef = useRef<HTMLDivElement>(null);
   const [showDims, setShowDims] = useState(true);
   const [tooltip, setTooltip] = useState<TooltipInfo | null>(null);
+  const [paper, setPaper] = useState<'A3' | 'A2'>('A3');
+  const [revision, setRevision] = useState('01');
+  const [pdfStatus, setPdfStatus] = useState<'idle' | 'busy' | 'error'>('idle');
   const [zoomScale, setZoomScale] = useState(1);
   /** Phase 12 / Sprint 14 — toggle isometric vs. animated WebGL view (only relevant when VITE_ENABLE_WEBGL=true). */
   const [webglIsometric, setWebglIsometric] = useState(true);
@@ -191,6 +194,55 @@ export const CabinetPreview = memo(function CabinetPreview() {
           >
             {t('preview.exportElevationDxf')}
           </button>
+        )}
+        {activeView === 'drawing' && config.furnitureType === 'wardrobe' && (
+          <>
+            <select
+              aria-label="Sheet size"
+              value={paper}
+              onChange={(e) => setPaper(e.target.value === 'A2' ? 'A2' : 'A3')}
+            >
+              <option>A3</option>
+              <option>A2</option>
+            </select>
+            <label>
+              Rev. <input className="w-12 border" value={revision} onChange={(e) => setRevision(e.target.value)} />
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                triggerDownload(
+                  cabinetElevationDxf(config, customMaterials, []),
+                  'application/dxf',
+                  'wardrobe-review.dxf',
+                )
+              }
+            >
+              Shop DXF
+            </button>
+            <button
+              type="button"
+              disabled={pdfStatus === 'busy'}
+              onClick={async () => {
+                setPdfStatus('busy');
+                try {
+                  const { projectName, cabinets, activeCabinetIndex } = useCabinetStore.getState();
+                  const { wardrobeReviewPdf } = await import('../pdf/wardrobe-review');
+                  const { downloadBlob } = await import('../../platform/files/download');
+                  const unit = 'C' + (activeCabinetIndex + 1) + ' ' + cabinets[activeCabinetIndex].name;
+                  downloadBlob(
+                    await wardrobeReviewPdf(config, customMaterials, projectName, unit, revision, paper),
+                    'wardrobe-review.pdf',
+                  );
+                  setPdfStatus('idle');
+                } catch {
+                  setPdfStatus('error');
+                }
+              }}
+            >
+              {pdfStatus === 'busy' ? 'Preparing PDF…' : pdfStatus === 'error' ? 'Retry PDF' : 'Shop PDF'}
+            </button>
+          </>
         )}
         {zoomScale !== 1 && (
           <button

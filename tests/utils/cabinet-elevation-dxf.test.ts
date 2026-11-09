@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cabinetElevationDxf } from '../../src/utils/cabinet-elevation-dxf';
+import { cabinetElevationDxf, type DrawingView } from '../../src/utils/cabinet-elevation-dxf';
 import { cfg } from '../helpers';
 
 describe('cabinet elevation DXF', () => {
@@ -40,4 +40,34 @@ describe('cabinet elevation DXF', () => {
       expect(file).toContain('AcDbBlockBegin\r\n2\r\n' + d.get(2) + '\r\n');
     }
   });
+});
+
+it.each([1800, 2100])('exports wardrobe panel details at their cut sizes for width %i', (width) => {
+  const views: DrawingView[] = [];
+  cabinetElevationDxf(
+    cfg({
+      width,
+      height: 2400,
+      depth: 600,
+      furnitureType: 'wardrobe',
+      carcassMaterial: 'melamine-18',
+      shelfCount: 3,
+      shelfCentreSupports: 2,
+      drawerCount: 2,
+      doorCount: 2,
+      doorStyle: 'flat',
+      doorReveal: 3,
+    }),
+    [],
+    views,
+  );
+  function size(name: string) {
+    const v = views.find((view) => view.title.endsWith(' / ' + name));
+    return [v?.height, v?.width];
+  }
+  expect(size('Adjustable Shelf')).toEqual([width - 38, 580]);
+  expect(size('Centre Support')).toEqual([2364, 580]);
+  expect(size('Door')).toEqual([2394, (width - 8) / 2]);
+  expect(size('Drawer 1 Front')).toEqual([180, width - 36]);
+  expect(views.map((v) => v.title)).toContain('Horizontal section through dividers');
 });
