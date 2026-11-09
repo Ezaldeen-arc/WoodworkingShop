@@ -1,3 +1,4 @@
+import { KitchenWorkspace } from './features/kitchen/KitchenWorkspace';
 import './i18n';
 import './index.css';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, Suspense } from 'react';
@@ -651,18 +652,20 @@ function App() {
               </div>
             )}
             {activeTab === 'preview' && (
-              <div className="space-y-6">
-                <ErrorBoundary panelName={t('tabs.preview')}>
-                  <Suspense fallback={<SkeletonPane label={t('skeleton.loading')} />}>
-                    <CabinetPreview />
-                  </Suspense>
-                </ErrorBoundary>
-                <ErrorBoundary panelName={t('errors.interactivePreview')}>
-                  <Suspense fallback={<SkeletonPane label={t('skeleton.loading')} />}>
-                    <Preview3DPanel />
-                  </Suspense>
-                </ErrorBoundary>
-              </div>
+              <KitchenWorkspace>
+                <div className="space-y-6">
+                  <ErrorBoundary panelName={t('tabs.preview')}>
+                    <Suspense fallback={<SkeletonPane label={t('skeleton.loading')} />}>
+                      <CabinetPreview />
+                    </Suspense>
+                  </ErrorBoundary>
+                  <ErrorBoundary panelName={t('errors.interactivePreview')}>
+                    <Suspense fallback={<SkeletonPane label={t('skeleton.loading')} />}>
+                      <Preview3DPanel />
+                    </Suspense>
+                  </ErrorBoundary>
+                </div>
+              </KitchenWorkspace>
             )}
             {activeTab === 'optimizer' && (
               <ErrorBoundary panelName={t('tabs.optimizer')}>
